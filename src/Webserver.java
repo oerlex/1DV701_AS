@@ -32,7 +32,7 @@ public class Webserver {
             //When a new connection gets in create a new connection object
             Socket clientSocket = listenSocket.accept();
             Connection c = new Connection(clientSocket);
-            c.start();
+
         }
 
 
@@ -46,6 +46,7 @@ public class Webserver {
 
         public Connection(Socket socket){
             clientSocket = socket;
+            this.start();
         }
 
         public void run(){
@@ -81,12 +82,13 @@ public class Webserver {
                 System.out.println(ding);
 
                 if(command != null){
+                    String folder = "src/";
                     System.out.println("\nWe have a get request !");
-                    File dang = new File("src/index.html");
+                    File file = new File(folder+ding);
                     String contentType = "Content-Type: text/html"+ "\r\n";
                     String statusLine = "HTTP/1.1 200 OK" +"\r\n";
 
-                    FileInputStream fileIN = new FileInputStream(dang);
+                    FileInputStream fileIN = new FileInputStream(file);
 
                     dataOutputStream.writeBytes(statusLine);
                     dataOutputStream.writeBytes(contentType);
@@ -95,6 +97,10 @@ public class Webserver {
 
                     sendFile(fileIN,dataOutputStream);
                 }
+
+                this.interrupt();
+                clientSocket.close();
+
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {
