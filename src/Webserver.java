@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.StringTokenizer;
 
 /**
  * Created by oerlex on 2016-02-15.
@@ -10,6 +9,9 @@ public class Webserver {
 
     private int port;
     private enum Method{GET,POST; }
+
+    private final String HTMLContent = "Content-Type: text/html"+ "\r\n";
+    private final String IMGContent = "Content-Type: image/png"+ "\r\n";
 
 
 
@@ -77,15 +79,27 @@ public class Webserver {
                     System.out.println(s);
                 }
 
-                String dong = messageArray[1];
-                String ding = dong.substring(1);
-                System.out.println(ding);
+                String requestedPath = messageArray[1];
+                requestedPath = requestedPath.substring(1);
+                System.out.println(requestedPath);
 
                 if(command != null){
                     String folder = "src/";
                     System.out.println("\nWe have a get request !");
-                    File file = new File(folder+ding);
-                    String contentType = "Content-Type: text/html"+ "\r\n";
+
+                    if(doesExist(folder+requestedPath)) {
+
+                    }
+
+                    File file = new File(folder+ requestedPath);
+
+                    String contentType = "";
+                    if(getPrefix(requestedPath).equals("png")) {
+                        contentType = IMGContent;
+                    } else {
+                        contentType = HTMLContent;
+                    }
+
                     String statusLine = "HTTP/1.1 200 OK" +"\r\n";
 
                     FileInputStream fileIN = new FileInputStream(file);
@@ -95,7 +109,7 @@ public class Webserver {
                     dataOutputStream.writeBytes("Connection: close\r\n");
                     dataOutputStream.writeBytes("\r\n");
 
-                    sendFile(fileIN,dataOutputStream);
+                    sendFile(fileIN, dataOutputStream);
                 }
 
                 this.interrupt();
@@ -117,6 +131,20 @@ public class Webserver {
                 out.write(buffer, 0, bytesRead);
             }
             fin.close();
+        }
+
+        public String getPrefix(String requestedPath) {
+            String[] split = requestedPath.split("\\.");
+            String prefix = split[1];
+            return prefix;
+        }
+
+        public boolean doesExist(String path) {
+                File tryFile = new File(path + "index.html");
+            if(tryFile.isFile()) {
+                return true;
+            }
+            return false;
         }
 
     }
