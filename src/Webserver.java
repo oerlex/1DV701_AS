@@ -87,8 +87,10 @@ public class Webserver {
                     String folder = "src/";
                     System.out.println("\nWe have a get request !");
 
-                    if(doesExist(folder+requestedPath)) {
-
+                    if(containsIndex(folder + requestedPath)) {
+                        requestedPath += "/index.html";
+                    } else {
+                        //404??
                     }
 
                     File file = new File(folder+ requestedPath);
@@ -139,9 +141,9 @@ public class Webserver {
             return prefix;
         }
 
-        public boolean doesExist(String path) {
-                File tryFile = new File(path + "index.html");
-            if(tryFile.isFile()) {
+        public boolean containsIndex(String path) {
+                File tryFile = new File(path + "/index.html");
+            if(tryFile.exists()) {
                 return true;
             }
             return false;
