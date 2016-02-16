@@ -45,7 +45,8 @@ public class Webserver {
     class Connection extends Thread {
         Socket clientSocket;
         String command;
-
+        DataOutputStream dataOutputStream;
+        BufferedReader bufferedReader;
         public Connection(Socket socket){
             clientSocket = socket;
             this.start();
@@ -54,12 +55,11 @@ public class Webserver {
         public void run(){
             // set up the read and write end of the communication socket
             try {
-                BufferedReader bufferedReader = new BufferedReader (
-                        new InputStreamReader(clientSocket.getInputStream()));
+                bufferedReader = new BufferedReader (new InputStreamReader(clientSocket.getInputStream()));
 
-                DataOutputStream dataOutputStream = new DataOutputStream (
-                        clientSocket.getOutputStream());
+                dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
 
+                /* All this shit should maybe go in a method or some shit i dont know man */
                 String message = bufferedReader.readLine();
                 System.out.println("Reading...");
 
@@ -82,40 +82,47 @@ public class Webserver {
                 String requestedPath = messageArray[1];
                 requestedPath = requestedPath.substring(1);
                 System.out.println(requestedPath);
+                /* To here*/
 
+
+                String statusLine = "";
+                String contentType = "";
+                File file = new File("");
                 if(command != null){
                     String folder = "src/";
                     System.out.println("\nWe have a get request !");
 
-                    if(containsIndex(folder + requestedPath)) {
-                        requestedPath += "/index.html";
-                    } else {
-                        //404??
-                    }
+                    if(pathExists(folder + requestedPath)) {
+                        if(containsIndex(folder + requestedPath)) {
+                            requestedPath += "/index.html";
+                        }
 
-                    File file = new File(folder+ requestedPath);
+                        statusLine = "HTTP/1.1 200 OK" +"\r\n";
+                        file = new File(folder+ requestedPath);
 
-                    String contentType = "";
-                    if(getPrefix(requestedPath).equals("png")) {
-                        contentType = IMGContent;
+                        if(getPrefix(requestedPath).equals("png")) {
+                            contentType = IMGContent;
+                        } else {
+                            contentType = HTMLContent;
+                        }
+                        sendHeader(statusLine,contentType);
+                        FileInputStream fileIN = new FileInputStream(file);
+                        sendFile(fileIN, dataOutputStream);
                     } else {
+                        //404
+                        file = new File(folder+"responsecodes/FileNotFound404.html");
+                        statusLine = "HTTP/1.1 404 Not Found" +"\r\n";
                         contentType = HTMLContent;
+                        sendHeader(statusLine,contentType);
+                        FileInputStream fileIN = new FileInputStream(file);
+                        sendFile(fileIN, dataOutputStream);
+
                     }
-
-                    String statusLine = "HTTP/1.1 200 OK" +"\r\n";
-
-                    FileInputStream fileIN = new FileInputStream(file);
-
-                    dataOutputStream.writeBytes(statusLine);
-                    dataOutputStream.writeBytes(contentType);
-                    dataOutputStream.writeBytes("Connection: close\r\n");
-                    dataOutputStream.writeBytes("\r\n");
-
-                    sendFile(fileIN, dataOutputStream);
                 }
 
-                this.interrupt();
                 clientSocket.close();
+                Thread.currentThread().interrupt();
+                return;
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -123,6 +130,13 @@ public class Webserver {
 
             }
 
+        }
+
+        private void sendHeader(String status, String contentType) throws IOException {
+            dataOutputStream.writeBytes(status);
+            dataOutputStream.writeBytes(contentType);
+            dataOutputStream.writeBytes("Connection: close\r\n");
+            dataOutputStream.writeBytes("\r\n");
         }
 
         public void sendFile (FileInputStream fin, DataOutputStream out) throws Exception {
@@ -142,7 +156,15 @@ public class Webserver {
         }
 
         public boolean containsIndex(String path) {
-                File tryFile = new File(path + "/index.html");
+            File tryFile = new File(path + "/index.html");
+            if(tryFile.exists()) {
+                return true;
+            }
+            return false;
+        }
+
+        public boolean pathExists(String path) {
+            File tryFile = new File(path);
             if(tryFile.exists()) {
                 return true;
             }
