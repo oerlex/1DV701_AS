@@ -82,25 +82,29 @@ public class Webserver {
                 String contentType = "";
                 File file = new File("");
                 if(command != null){
-                    String folder = "src/";
+                    String folder = "src/sharedFolder/";
                     System.out.println("\nWe have a get request !");
 
-                    if(pathExists(folder + requestedPath)) {
+                    if(!pathExists(folder + requestedPath)) {
+                        //shitty path
+                        file = new File("src/responsecodes/FileNotFound404.html");
+                        FileNotFound404Response fileNotFound = new FileNotFound404Response();
+                        fileNotFound.sendResponse(dataOutputStream, HTMLContent);
+                        try {
+                            fileNotFound.sendFile(file, dataOutputStream);
+                            clientSocket.close();
+
+                        } catch (IOException e) {
+
+                        }
+                        Thread.currentThread().interrupt();
+                        return;
+                    } else {
                         if(containsIndex(folder + requestedPath)) {
                             requestedPath += "/index.html";
                         }
-                        else{
-                            file = new File(folder+"responsecodes/FileNotFound404.html");
-                            FileNotFound404Response fileNotFound = new FileNotFound404Response();
-                            fileNotFound.sendResponse(dataOutputStream,HTMLContent);
-                            fileNotFound.sendFile(file,dataOutputStream);
-                            clientSocket.close();
-                            Thread.currentThread().interrupt();
-                            return;
-
-                        }
                         file = new File(folder+ requestedPath);
-
+                        if(file.isFile()) {
                         if(getPrefix(requestedPath).equals("png")) {
                             contentType = IMGContent;
                         } else {
@@ -110,13 +114,13 @@ public class Webserver {
                         ok200Response.sendResponse(dataOutputStream,contentType);
                         ok200Response.sendFile(file, dataOutputStream);
                     } else {
-                        //404
-                        file = new File(folder+"responsecodes/FileNotFound404.html");
-                        FileNotFound404Response fileNotFound404Response = new FileNotFound404Response();
-                        fileNotFound404Response.sendResponse(dataOutputStream,HTMLContent);
-                        fileNotFound404Response.sendFile(file, dataOutputStream);
-
-                    }
+                                //404
+                                file = new File("src/responsecodes/FileNotFound404.html");
+                                FileNotFound404Response fileNotFound404Response = new FileNotFound404Response();
+                                fileNotFound404Response.sendResponse(dataOutputStream,HTMLContent);
+                                fileNotFound404Response.sendFile(file, dataOutputStream);
+                            }
+                        }
                 }
 
                 clientSocket.close();
@@ -140,10 +144,13 @@ public class Webserver {
         }
 
         public boolean containsIndex(String path) {
-            File tryFile = new File(path + "/index.html");
-            if(tryFile.exists()) {
-                return true;
-            }
+            File tryFile = new File(path);
+                if(tryFile.isDirectory()) {
+                    tryFile = new File(path + "/index.html");
+                    if(tryFile.exists()) {
+                        return true;
+                    }
+                }
             return false;
         }
 
