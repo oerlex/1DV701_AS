@@ -57,7 +57,6 @@ public class Webserver {
                 if(command != null) {
                     String folder = "src/sharedFolder/";
                     System.out.println("\nWe have a get request !");
-
                     if(!pathExists(folder + requestedPath)) {
                         //shitty path
                         file = new File("src/responsecodes/FileNotFound404.html");
