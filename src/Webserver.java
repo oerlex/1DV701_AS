@@ -12,6 +12,7 @@ public class Webserver {
 
     private final String HTMLContent = "Content-Type: text/html"+ "\r\n";
     private final String IMGContent = "Content-Type: image/png"+ "\r\n";
+    private final String folder = "src/sharedFolder/";
 
     public Webserver(int port){
         this.port = port;
@@ -55,44 +56,30 @@ public class Webserver {
                 File file = new File("");
 
                 if(command != null) {
-                    String folder = "src/sharedFolder/";
-                    System.out.println("\nWe have a get request !");
-                    if(!pathExists(folder + requestedPath)) {
-                        //shitty path
-                        file = new File("src/responsecodes/FileNotFound404.html");
-                        FileNotFound404Response fileNotFound = new FileNotFound404Response();
-                        fileNotFound.sendResponse(dataOutputStream, HTMLContent);
-                        try {
-                            fileNotFound.sendFile(file, dataOutputStream);
-                            clientSocket.close();
-                        } catch (IOException e) {
-                        }
 
+                    //If the requested file or directory doesn't exists we send a 404Html page back
+                    if(!pathExists(folder + requestedPath)) {
+                      throw404();
+
+                        //If the requested file is existent but in a nonpublic folder we send back a 403 HTML page
                     } else if(pathIsSecret(requestedPath)) {               //Secret
-                        Forbidden403Response forbidden403Response = new Forbidden403Response();
-                        forbidden403Response.sendResponse(dataOutputStream,HTMLContent);
-                        file = new File("src/responsecodes/Forbidden403.html");
-                        forbidden403Response.sendFile(file,dataOutputStream);
+                       throw403();
+
+                        //If it's existend and not restricted we check if a directory or a file has been requested.
                     } else {
-                        if(containsIndex(folder + requestedPath)) {
+                        //If its and directory we check for the corresponding index.html file and add it to the requested path
+                        if(isDirectoryAndHasIndex(folder + requestedPath)) {
                             requestedPath += "/index.html";
                         }
+
+                        //If its a file we just leave the requested path like it is and determine the content type
                         file = new File(folder+ requestedPath);
-                        if(file.isFile()) {
-                            if(getPrefix(requestedPath).equals("png")) {
-                                contentType = IMGContent;
-                            } else {
-                                contentType = HTMLContent;
-                            }
-                        OK200Response ok200Response = new OK200Response();
-                        ok200Response.sendResponse(dataOutputStream,contentType);
-                        ok200Response.sendFile(file, dataOutputStream);
+                        contentType = setContentType(file,requestedPath);
+                        //If the content type is filled with either png or html/htm we send the requested file back otherwise we send a 404 page
+                        if(contentType != ""){
+                            send200(file,contentType);
                         } else {
-                            //404
-                            file = new File("src/responsecodes/FileNotFound404.html");
-                            FileNotFound404Response fileNotFound404Response = new FileNotFound404Response();
-                            fileNotFound404Response.sendResponse(dataOutputStream,HTMLContent);
-                            fileNotFound404Response.sendFile(file, dataOutputStream);
+                           throw404();
                         }
                     }
                 }
@@ -133,6 +120,43 @@ public class Webserver {
             return requestedPath;
         }
 
+        private String setContentType(File file, String requestedPath){
+            String contentType = "";
+
+            if(file.isFile()) {
+                if(getPrefix(requestedPath).equals("png")) {
+                    contentType = IMGContent;
+                } else {
+                    contentType = HTMLContent;
+                }
+            }
+            return contentType;
+        }
+
+        private void send200(File file , String contentType){
+            OK200Response ok200Response = new OK200Response();
+            ok200Response.sendResponse(dataOutputStream,contentType);
+            ok200Response.sendFile(file, dataOutputStream);
+        }
+
+        private void throw403(){
+            Forbidden403Response forbidden403Response = new Forbidden403Response();
+            forbidden403Response.sendResponse(dataOutputStream,HTMLContent);
+            File file = new File("src/responsecodes/Forbidden403.html");
+            forbidden403Response.sendFile(file,dataOutputStream);
+        }
+
+        private void throw404() {
+            File file = new File("src/responsecodes/FileNotFound404.html");
+            FileNotFound404Response fileNotFound = new FileNotFound404Response();
+            fileNotFound.sendResponse(dataOutputStream, HTMLContent);
+            try {
+                fileNotFound.sendFile(file, dataOutputStream);
+                clientSocket.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
 
         public String getPrefix(String requestedPath) {
@@ -141,7 +165,7 @@ public class Webserver {
             return prefix;
         }
 
-        public boolean containsIndex(String path) {
+        public boolean isDirectoryAndHasIndex(String path) {
             File tryFile = new File(path);
                 if(tryFile.isDirectory()) {
                     tryFile = new File(path + "/index.html");
