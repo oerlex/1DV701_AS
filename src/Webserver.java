@@ -10,8 +10,6 @@ public class Webserver {
     private int port;
     private enum Method{GET,POST; }
 
-    private final String HTMLContent = "Content-Type: text/html"+ "\r\n";
-    private final String IMGContent = "Content-Type: image/png"+ "\r\n";
     private final String folder = "src/sharedFolder/";
 
     public Webserver(int port){
@@ -35,6 +33,7 @@ public class Webserver {
 
     //The Connection class extending thread is echoing back every request
     class Connection extends Thread {
+        ResponseSender responseSender;
         Socket clientSocket;
         String command;
         DataOutputStream dataOutputStream;
@@ -49,57 +48,46 @@ public class Webserver {
             try {
                 bufferedReader = new BufferedReader (new InputStreamReader(clientSocket.getInputStream()));
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
-
+                responseSender = new ResponseSender(dataOutputStream);
                 String requestedPath = parseRequest();
 
                 String contentType = "";
                 File file = new File("");
 
                 if(command != null) {
-
                     //If the requested file or directory doesn't exists we send a 404Html page back
                     if(!pathExists(folder + requestedPath)) {
-                      throw404();
-
+                      responseSender.throw404();
+                        clientSocket.close();
                         //If the requested file is existent but in a nonpublic folder we send back a 403 HTML page
                     } else if(pathIsSecret(requestedPath)) {               //Secret
-                       throw403();
-
+                       responseSender.throw403();
+                        clientSocket.close();
                         //If it's existend and not restricted we check if a directory or a file has been requested.
                     } else {
                         //If its and directory we check for the corresponding index.html file and add it to the requested path
                         if(isDirectoryAndHasIndex(folder + requestedPath)) {
                             requestedPath += "/index.html";
                         }
-
                         //If its a file we just leave the requested path like it is and determine the content type
                         file = new File(folder+ requestedPath);
-                        contentType = setContentType(file,requestedPath);
                         //If the content type is filled with either png or html/htm we send the requested file back otherwise we send a 404 page
-                        if(contentType != ""){
-                            send200(file,contentType);
-                        } else {
-                           throw404();
-                        }
+                        responseSender.send200(file);
                     }
                 }
 
                 clientSocket.close();
                 Thread.currentThread().interrupt();
-                return;
 
             } catch (Exception e) {
                 e.printStackTrace();
-                InternalServerError500Response internalServerError500Response = new InternalServerError500Response();
-                internalServerError500Response.sendResponse(dataOutputStream,HTMLContent);
-                File file = new File("src/responsecodes/InternalServerError500.html");
-                internalServerError500Response.sendFile(file,dataOutputStream);
+                responseSender.throw500();
             }
         }
         public String parseRequest() throws IOException{
             String message = bufferedReader.readLine();
             System.out.println("Reading...");
-
+            System.out.println(message);
             String[] messageArray = message.split("\\s");
 
             StringBuilder sb = new StringBuilder();
@@ -110,59 +98,11 @@ public class Webserver {
                 message = bufferedReader.readLine();
             }
 
-            for(String s : messageArray){
-                if(s.equals("GET")){command = s;}
-                System.out.println(s);
-            }
+            command = messageArray[0];
 
             String requestedPath = messageArray[1];
             requestedPath = requestedPath.substring(1);
             return requestedPath;
-        }
-
-        private String setContentType(File file, String requestedPath){
-            String contentType = "";
-
-            if(file.isFile()) {
-                if(getPrefix(requestedPath).equals("png")) {
-                    contentType = IMGContent;
-                } else {
-                    contentType = HTMLContent;
-                }
-            }
-            return contentType;
-        }
-
-        private void send200(File file , String contentType){
-            OK200Response ok200Response = new OK200Response();
-            ok200Response.sendResponse(dataOutputStream,contentType);
-            ok200Response.sendFile(file, dataOutputStream);
-        }
-
-        private void throw403(){
-            Forbidden403Response forbidden403Response = new Forbidden403Response();
-            forbidden403Response.sendResponse(dataOutputStream,HTMLContent);
-            File file = new File("src/responsecodes/Forbidden403.html");
-            forbidden403Response.sendFile(file,dataOutputStream);
-        }
-
-        private void throw404() {
-            File file = new File("src/responsecodes/FileNotFound404.html");
-            FileNotFound404Response fileNotFound = new FileNotFound404Response();
-            fileNotFound.sendResponse(dataOutputStream, HTMLContent);
-            try {
-                fileNotFound.sendFile(file, dataOutputStream);
-                clientSocket.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-
-        public String getPrefix(String requestedPath) {
-            String[] split = requestedPath.split("\\.");
-            String prefix = split[1];
-            return prefix;
         }
 
         public boolean isDirectoryAndHasIndex(String path) {
@@ -189,8 +129,5 @@ public class Webserver {
                 return true;
             return false;
         }
-
-
-
     }
 }
