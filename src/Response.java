@@ -10,20 +10,23 @@ public abstract class Response {
 
     protected String response = "";
 
-
-    public Response(){ }
+    public Response(){}
 
     public abstract String sendResponse(DataOutputStream dataOutputStream, String contentType);
 
-    protected void sendFile (File file, DataOutputStream out) throws Exception {
-        FileInputStream fileIN = new FileInputStream(file);
-        byte[] buffer = new byte[1024] ;
-        int bytesRead;
+    protected void sendFile (File file, DataOutputStream out) {
+        try {
+            FileInputStream fileIN = new FileInputStream(file);
+            byte[] buffer = new byte[1024];
+            int bytesRead;
 
-        while ((bytesRead = fileIN.read(buffer)) != -1 ) {
-            out.write(buffer, 0, bytesRead);
+            while ((bytesRead = fileIN.read(buffer)) != -1) {
+                out.write(buffer, 0, bytesRead);
+            }
+            fileIN.close();
+        } catch(IOException e) {
+            System.out.println(e.getMessage());
         }
-        fileIN.close();
     }
 
 }

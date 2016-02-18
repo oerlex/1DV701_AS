@@ -8,7 +8,7 @@ public class OK200Response extends Response {
 
     @Override
     public String sendResponse(DataOutputStream dataOutputStream, String contentType) {
-        response += "\"HTTP/1.1 200 OK\" +\"\r\n\"";
+        response += "\"HTTP/1.1 200 OK \r\n\"";
         response += contentType+"/r/n";
         response += "Connection: close\r\n";
         response += "\r\n";

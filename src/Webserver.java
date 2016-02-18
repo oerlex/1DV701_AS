@@ -24,9 +24,7 @@ public class Webserver {
 
     public void start() throws IOException {
         ServerSocket listenSocket = new ServerSocket(port);
-
         System.out.println("Server started...");
-
         while(true) {
             //When a new connection gets in create a new connection object
             Socket clientSocket = listenSocket.accept();
@@ -51,15 +49,12 @@ public class Webserver {
                 bufferedReader = new BufferedReader (new InputStreamReader(clientSocket.getInputStream()));
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
 
-                /* All this shit should maybe go in a method or some shit i dont know man */
                 String requestedPath = parseRequest();
-                /* To here*/
-
 
                 String contentType = "";
                 File file = new File("");
 
-                if(command != null){
+                if(command != null) {
                     String folder = "src/sharedFolder/";
                     System.out.println("\nWe have a get request !");
 
@@ -72,43 +67,48 @@ public class Webserver {
                             fileNotFound.sendFile(file, dataOutputStream);
                             clientSocket.close();
                         } catch (IOException e) {
-
                         }
 
+                    } else if(pathIsSecret(requestedPath)) {               //Secret
+                        Forbidden403Response forbidden403Response = new Forbidden403Response();
+                        forbidden403Response.sendResponse(dataOutputStream,HTMLContent);
+                        file = new File("src/responsecodes/Forbidden403.html");
+                        forbidden403Response.sendFile(file,dataOutputStream);
                     } else {
                         if(containsIndex(folder + requestedPath)) {
                             requestedPath += "/index.html";
                         }
                         file = new File(folder+ requestedPath);
                         if(file.isFile()) {
-                        if(getPrefix(requestedPath).equals("png")) {
-                            contentType = IMGContent;
-                        } else {
-                            contentType = HTMLContent;
-                        }
+                            if(getPrefix(requestedPath).equals("png")) {
+                                contentType = IMGContent;
+                            } else {
+                                contentType = HTMLContent;
+                            }
                         OK200Response ok200Response = new OK200Response();
                         ok200Response.sendResponse(dataOutputStream,contentType);
                         ok200Response.sendFile(file, dataOutputStream);
-                    } else {
-                                //404
-                                file = new File("src/responsecodes/FileNotFound404.html");
-                                FileNotFound404Response fileNotFound404Response = new FileNotFound404Response();
-                                fileNotFound404Response.sendResponse(dataOutputStream,HTMLContent);
-                                fileNotFound404Response.sendFile(file, dataOutputStream);
-                            }
+                        } else {
+                            //404
+                            file = new File("src/responsecodes/FileNotFound404.html");
+                            FileNotFound404Response fileNotFound404Response = new FileNotFound404Response();
+                            fileNotFound404Response.sendResponse(dataOutputStream,HTMLContent);
+                            fileNotFound404Response.sendFile(file, dataOutputStream);
                         }
+                    }
                 }
 
                 clientSocket.close();
                 Thread.currentThread().interrupt();
                 return;
 
-            } catch (IOException e) {
-                e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
+                InternalServerError500Response internalServerError500Response = new InternalServerError500Response();
+                internalServerError500Response.sendResponse(dataOutputStream,HTMLContent);
+                File file = new File("src/responsecodes/InternalServerError500.html");
+                internalServerError500Response.sendFile(file,dataOutputStream);
             }
-
         }
         public String parseRequest() throws IOException{
             String message = bufferedReader.readLine();
@@ -161,6 +161,11 @@ public class Webserver {
             return false;
         }
 
+        public boolean pathIsSecret(String requestedPath) {
+            if(requestedPath.contains("secret"))
+                return true;
+            return false;
+        }
 
 
 
