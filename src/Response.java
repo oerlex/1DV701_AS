@@ -7,11 +7,7 @@ import java.io.IOException;
  * Created by oerlex on 2016-02-17.
  */
 public abstract class Response {
-    public static enum ReturnOptions{FileNotFound, OK;}
 
-
-    protected final String HTMLContent = "Content-Type: text/html"+ "\r\n";
-    protected final String IMGContent = "Content-Type: image/png"+ "\r\n";
     protected String response = "";
 
 

@@ -13,8 +13,6 @@ public class Webserver {
     private final String HTMLContent = "Content-Type: text/html"+ "\r\n";
     private final String IMGContent = "Content-Type: image/png"+ "\r\n";
 
-
-
     public Webserver(int port){
         this.port = port;
         try {
@@ -54,33 +52,13 @@ public class Webserver {
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
 
                 /* All this shit should maybe go in a method or some shit i dont know man */
-                String message = bufferedReader.readLine();
-                System.out.println("Reading...");
-
-                String[] messageArray = message.split("\\s");
-
-                StringBuilder sb = new StringBuilder();
-
-                while(bufferedReader.ready()){
-                    sb.append(message);
-                    System.out.println(message);
-                    message = bufferedReader.readLine();
-                }
-
-
-                for(String s : messageArray){
-                    if(s.equals("GET")){command = s;}
-                    System.out.println(s);
-                }
-
-                String requestedPath = messageArray[1];
-                requestedPath = requestedPath.substring(1);
-                System.out.println(requestedPath);
+                String requestedPath = parseRequest();
                 /* To here*/
 
 
                 String contentType = "";
                 File file = new File("");
+
                 if(command != null){
                     String folder = "src/sharedFolder/";
                     System.out.println("\nWe have a get request !");
@@ -93,12 +71,10 @@ public class Webserver {
                         try {
                             fileNotFound.sendFile(file, dataOutputStream);
                             clientSocket.close();
-
                         } catch (IOException e) {
 
                         }
-                        Thread.currentThread().interrupt();
-                        return;
+
                     } else {
                         if(containsIndex(folder + requestedPath)) {
                             requestedPath += "/index.html";
@@ -134,6 +110,29 @@ public class Webserver {
             }
 
         }
+        public String parseRequest() throws IOException{
+            String message = bufferedReader.readLine();
+            System.out.println("Reading...");
+
+            String[] messageArray = message.split("\\s");
+
+            StringBuilder sb = new StringBuilder();
+
+            while(bufferedReader.ready()){
+                sb.append(message);
+                System.out.println(message);
+                message = bufferedReader.readLine();
+            }
+
+            for(String s : messageArray){
+                if(s.equals("GET")){command = s;}
+                System.out.println(s);
+            }
+
+            String requestedPath = messageArray[1];
+            requestedPath = requestedPath.substring(1);
+            return requestedPath;
+        }
 
 
 
@@ -161,6 +160,9 @@ public class Webserver {
             }
             return false;
         }
+
+
+
 
     }
 }
