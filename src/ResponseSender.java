@@ -1,3 +1,4 @@
+import javax.swing.text.html.HTML;
 import java.io.DataOutputStream;
 import java.io.File;
 
@@ -40,26 +41,34 @@ public class ResponseSender {
             ok200Response.sendResponse(dataOutputStream, contentType);
             ok200Response.sendFile(file, dataOutputStream);
         } else {
-            throw404();
+            send404();
         }
     }
 
-    public void throw403(){
+    public void send201() {
+        //implement
+        Created201 created201 = new Created201();
+        created201.sendResponse(dataOutputStream, HTMLContent);
+        File file = new File("src/responsecodes/Created201.html");
+        created201.sendFile(file,dataOutputStream);
+    }
+
+
+    public void send403(){
         Forbidden403Response forbidden403Response = new Forbidden403Response();
         forbidden403Response.sendResponse(dataOutputStream,HTMLContent);
         File file = new File("src/responsecodes/Forbidden403.html");
         forbidden403Response.sendFile(file,dataOutputStream);
     }
 
-    public void throw404() {
+    public void send404() {
         File file = new File("src/responsecodes/FileNotFound404.html");
         FileNotFound404Response fileNotFound = new FileNotFound404Response();
         fileNotFound.sendResponse(dataOutputStream, HTMLContent);
         fileNotFound.sendFile(file, dataOutputStream);
     }
 
-    public void throw500() {
-        //implement
+    public void send500() {
         InternalServerError500Response internalServerError500Response = new InternalServerError500Response();
         internalServerError500Response.sendResponse(dataOutputStream,HTMLContent);
         File file = new File("src/responsecodes/InternalServerError500.html");

@@ -37,7 +37,9 @@ public class Webserver {
         Socket clientSocket;
         String command;
         String body;
+        byte[] buffer;
         DataOutputStream dataOutputStream;
+        DataInputStream dataInputStream;
         BufferedReader bufferedReader;
         public Connection(Socket socket){
             clientSocket = socket;
@@ -48,8 +50,10 @@ public class Webserver {
             // set up the read and write end of the communication socket
             try {
                 bufferedReader = new BufferedReader (new InputStreamReader(clientSocket.getInputStream()));
+                dataInputStream = new DataInputStream(clientSocket.getInputStream());
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
                 responseSender = new ResponseSender(dataOutputStream);
+                buffer = new byte[1024];
                 String requestedPath = parseRequest();
 
                 String contentType = "";
@@ -58,11 +62,11 @@ public class Webserver {
                 if(command.equals("GET")) {
                     //If the requested file or directory doesn't exists we send a 404Html page back
                     if(!pathExists(folder + requestedPath)) {
-                      responseSender.throw404();
+                      responseSender.send404();
                         clientSocket.close();
                         //If the requested file is existent but in a nonpublic folder we send back a 403 HTML page
                     } else if(pathIsSecret(requestedPath)) {               //Secret
-                       responseSender.throw403();
+                       responseSender.send403();
                         clientSocket.close();
                         //If it's existend and not restricted we check if a directory or a file has been requested.
                     } else {
@@ -76,19 +80,59 @@ public class Webserver {
                         responseSender.send200(file);
                     }
                 } else if(command.equals("POST")) {
-                    System.out.println("RECEIVED POST REQUEST YO-----------");
+                    responseSender.send201();
                     System.out.println(body);
                 }
 
                 clientSocket.close();
                 Thread.currentThread().interrupt();
 
-            } catch (Exception e) {
+            } catch (NullPointerException e) {
+                System.out.println("nullpointer...");
+            }
+            catch (Exception e) {
                 e.printStackTrace();
-                responseSender.throw500();
+                responseSender.send500();
             }
         }
-        public String parseRequest() throws IOException{
+
+        /*
+        BufferedReader in = new BufferedReader(
+		        new InputStreamReader(con.getInputStream()));
+		String inputLine;
+		StringBuffer response = new StringBuffer();
+
+		while ((inputLine = in.readLine()) != null) {
+			response.append(inputLine);
+		}
+         */
+        public String parseRequest() throws IOException {
+
+            StringBuffer response = new StringBuffer();
+            String message = "";
+            char[] charBuffer = new char[1024];
+            int n = 0;
+            do{
+                n = bufferedReader.read(charBuffer, n,1024);
+            } while(bufferedReader.ready());
+
+
+            response.append(charBuffer);
+            message = response.toString();
+            System.out.println(message);
+            /*
+            while(!(message = bufferedReader.readLine()).equals("")) {
+                response.append(message);
+                System.out.println(message);
+            }*/
+
+            String[] divideMessages = response.toString().split("\\s+");
+            command = divideMessages[0];
+            String requestedPath = divideMessages[1];
+            System.out.printf("Received a %s request\n", command);
+            return requestedPath;
+        }
+       /* public String parseRequest() throws IOException{
             String message = bufferedReader.readLine();
             System.out.println("Reading...");
 
@@ -111,7 +155,7 @@ public class Webserver {
             requestedPath = requestedPath.substring(1);
             return requestedPath;
         }
-
+*/
         public boolean isDirectoryAndHasIndex(String path) {
             File tryFile = new File(path);
                 if(tryFile.isDirectory()) {
