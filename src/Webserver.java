@@ -36,6 +36,7 @@ public class Webserver {
         ResponseSender responseSender;
         Socket clientSocket;
         String command;
+        String body;
         DataOutputStream dataOutputStream;
         BufferedReader bufferedReader;
         public Connection(Socket socket){
@@ -54,7 +55,7 @@ public class Webserver {
                 String contentType = "";
                 File file = new File("");
 
-                if(command != null) {
+                if(command.equals("GET")) {
                     //If the requested file or directory doesn't exists we send a 404Html page back
                     if(!pathExists(folder + requestedPath)) {
                       responseSender.throw404();
@@ -74,6 +75,9 @@ public class Webserver {
                         //If the content type is filled with either png or html/htm we send the requested file back otherwise we send a 404 page
                         responseSender.send200(file);
                     }
+                } else if(command.equals("POST")) {
+                    System.out.println("RECEIVED POST REQUEST YO-----------");
+                    System.out.println(body);
                 }
 
                 clientSocket.close();
@@ -87,15 +91,18 @@ public class Webserver {
         public String parseRequest() throws IOException{
             String message = bufferedReader.readLine();
             System.out.println("Reading...");
-            System.out.println(message);
+
             String[] messageArray = message.split("\\s");
 
             StringBuilder sb = new StringBuilder();
 
             while(bufferedReader.ready()){
                 sb.append(message);
-                System.out.println(message);
                 message = bufferedReader.readLine();
+                if(message.contains("firstname")) {
+                    getBody(message);
+                }
+                System.out.println(message);
             }
 
             command = messageArray[0];
@@ -122,6 +129,10 @@ public class Webserver {
                 return true;
             }
             return false;
+        }
+        private void getBody(String body) {
+            this.body = body;
+            //To be further implemented.
         }
 
         public boolean pathIsSecret(String requestedPath) {

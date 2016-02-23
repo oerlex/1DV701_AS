@@ -28,7 +28,7 @@ public class ResponseSender {
 
     public String getPrefix(String requestedPath) {
         String[] split = requestedPath.split("\\.");
-        String prefix = split[1];
+        String prefix = split[split.length-1];
         return prefix;
     }
 
