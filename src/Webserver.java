@@ -1,6 +1,11 @@
+import org.apache.commons.codec.binary.Base64;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.StringTokenizer;
 
 /**
  * Created by oerlex on 2016-02-15.
@@ -10,7 +15,7 @@ public class Webserver {
     private int port;
     private enum Method{GET,POST; }
 
-    private final String folder = "src/sharedFolder/";
+    private final String folder = "src/sharedFolder";
 
     public Webserver(int port){
         this.port = port;
@@ -41,6 +46,7 @@ public class Webserver {
         DataOutputStream dataOutputStream;
         DataInputStream dataInputStream;
         BufferedReader bufferedReader;
+        String postData="";
         public Connection(Socket socket){
             clientSocket = socket;
             this.start();
@@ -54,7 +60,7 @@ public class Webserver {
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
                 responseSender = new ResponseSender(dataOutputStream);
                 buffer = new byte[1024];
-                String requestedPath = parseRequest();
+                String requestedPath = parseRequest2();
 
                 String contentType = "";
                 File file = new File("");
@@ -80,8 +86,26 @@ public class Webserver {
                         responseSender.send200(file);
                     }
                 } else if(command.equals("POST")) {
+
+                    String[] splitter = postData.split("base64=");
+                    String fileName = splitter[0].substring(4,splitter[0].length()-2);
+
+                    String content = splitter[1].split(",")[1];
+
+                    System.out.println("FILENAME: "+fileName);
+                    System.out.println("CONTENT: "+content);
+
+                    byte[] data = Base64.decodeBase64(content);
+
+                    String path = "src/sharedFolder/images/"+fileName;
+
+                    Files.write(Paths.get(path),data);
+
+
                     responseSender.send201();
                     System.out.println(body);
+
+
                 }
 
                 clientSocket.close();
@@ -96,21 +120,11 @@ public class Webserver {
             }
         }
 
-        /*
-        BufferedReader in = new BufferedReader(
-		        new InputStreamReader(con.getInputStream()));
-		String inputLine;
-		StringBuffer response = new StringBuffer();
-
-		while ((inputLine = in.readLine()) != null) {
-			response.append(inputLine);
-		}
-         */
         public String parseRequest() throws IOException {
 
             StringBuffer response = new StringBuffer();
             String message = "";
-            char[] charBuffer = new char[1024];
+            char[] charBuffer = new char[65500];
             int n = 0;
             do{
                 n = bufferedReader.read(charBuffer, n,1024);
@@ -127,6 +141,54 @@ public class Webserver {
             System.out.printf("Received a %s request\n", command);
             return requestedPath;
         }
+
+        public String parseRequest2() throws IOException {
+            int contentLength = 0;
+
+            String ding = "";
+            StringBuffer response = new StringBuffer();
+            String message = "";
+            int n = 0;
+
+            while(bufferedReader.ready()){
+                message = bufferedReader.readLine();
+                response.append(message+ "\r\n");
+                System.out.println(message);
+
+                if(message.contains("Content-Length")) {
+                    ding = message.split(" ")[1];
+                    contentLength = Integer.parseInt(ding);
+                }
+
+                if(message.equals(""))
+                    break;
+            }
+            StringTokenizer st = new StringTokenizer(response.toString());
+            command = st.nextToken();
+
+            String requestedPath = st.nextToken();
+
+            response = new StringBuffer();
+
+            int read ;
+
+            if(contentLength > 0) {
+                while ((read = bufferedReader.read()) != -1) {
+                    char c = (char)read;
+                    System.out.print(c);
+                    response.append(c);
+                    if (response.length() == contentLength)
+                        break;
+                }
+            }
+
+            postData = response.toString();
+
+            System.out.println("PATH: "+ requestedPath);
+            System.out.println("COMMAND: "+ command);
+            return requestedPath;
+        }
+
        /* public String parseRequest() throws IOException{
             String message = bufferedReader.readLine();
             System.out.println("Reading...");

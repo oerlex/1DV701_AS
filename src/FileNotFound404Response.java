@@ -13,10 +13,9 @@ public class FileNotFound404Response extends Response {
 
     @Override
     public String sendResponse(DataOutputStream dataOutputStream,String contentType) {
-        response += "\"HTTP/1.1 404 Not Found \r\n\"";
+        response += "\"HTTP/1.1 404 Not Found \r\n";
 
-        response += contentType+"/r/n";
-        response += "Connection: close\r\n";
+        response += contentType+"\r\n";
         response += "\r\n";
 
         try {

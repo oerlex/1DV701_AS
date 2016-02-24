@@ -1,6 +1,7 @@
 import javax.swing.text.html.HTML;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.util.Objects;
 
 /**
  * Created by Ludde on 2016-02-18.
@@ -8,8 +9,9 @@ import java.io.File;
 public class ResponseSender {
 
     private DataOutputStream dataOutputStream;
-    private final String HTMLContent = "Content-Type: text/html"+ "\r\n";
-    private final String IMGContent = "Content-Type: image/png"+ "\r\n";
+    private final String HTMLContent = "Content-Type: text/html";
+    private final String PNGContent = "Content-Type: image/png";
+    private final String JPGContent = "Content-Type: image/jpg";
 
     public ResponseSender(DataOutputStream dataOutputStream) {
         this.dataOutputStream = dataOutputStream;
@@ -19,15 +21,18 @@ public class ResponseSender {
         String contentType = "";
         if(file.isFile()) {
             if(getPrefix(file.getPath()).equals("png")) {
-                contentType = IMGContent;
-            } else {
+                contentType = PNGContent;
+            }else if(getPrefix(file.getPath()).equals("jpg")){
+                contentType = JPGContent;
+            }
+            else {
                 contentType = HTMLContent;
             }
         }
         return contentType;
     }
 
-    public String getPrefix(String requestedPath) {
+    private String getPrefix(String requestedPath) {
         String[] split = requestedPath.split("\\.");
         String prefix = split[split.length-1];
         return prefix;
@@ -36,7 +41,7 @@ public class ResponseSender {
     public void send200(File file){
         //This will send the file requested if it is of a contentype that we support. New contenttypes for example ".jpeg" can easily be added to this class.
         String contentType = setContentType(file);
-        if(contentType != "") {
+        if(!contentType.equals("")) {
             OK200Response ok200Response = new OK200Response();
             ok200Response.sendResponse(dataOutputStream, contentType);
             ok200Response.sendFile(file, dataOutputStream);

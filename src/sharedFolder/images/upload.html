@@ -6,12 +6,36 @@
 </head>
 <body>
 
-<form method="post" enctype="application/x-www-form-urlencoded" accept="image/gif,image/jpeg">
-    First name: <input type="text" name="fname"><br>
-    Last name: <input type="text" name="lname"><br>
-    Your image: <input type="file" name="pic" id="pic"><br>
+
+
+<form method="post" enctype="text/plain" accept="image/gif,image/jpeg">
+    Your image: <input type="file" name="pic" id="pic" onchange="loadImageFileAsURL()"><br>
+    <input type="hidden" id="base64" name="base64">
     <input type="submit" value="Submit">
 </form>
 
 </body>
+
+<script type="text/javascript">
+    function loadImageFileAsURL()
+    {
+        var filesSelected = document.getElementById("pic").files;
+        var base64 = document.getElementById("base64");
+        if (filesSelected.length > 0)
+        {
+            var fileToLoad = filesSelected[0];
+
+            var fileReader = new FileReader();
+
+            fileReader.onload = function(fileLoadedEvent)
+            {
+                base64.value = fileLoadedEvent.target.result;
+            };
+
+            fileReader.readAsDataURL(fileToLoad);
+        }
+    }
+
+
+</script>
 </html>
