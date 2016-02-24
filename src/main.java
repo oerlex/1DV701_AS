@@ -3,7 +3,7 @@ import java.io.IOException;
 /**
  * Created by oerlex on 2016-02-15.
  */
-public class MainServer {
+public class main {
 
     public static void main(String args[]){
         Webserver webserver = new Webserver(8888);

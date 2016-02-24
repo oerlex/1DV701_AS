@@ -1,12 +1,13 @@
-import org.apache.commons.codec.binary.Base64;
+import Response.ResponseSender;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.StringTokenizer;
 
 /**
@@ -14,9 +15,14 @@ import java.util.StringTokenizer;
  */
 public class Webserver {
 
-    private int port;
-    private enum Method{GET,POST; }
 
+    //Add/Remove what filetypes our POST upload file supports here.
+    private final ArrayList<String> supportedFiletypes = new ArrayList<>(
+            Arrays.asList("png","jpeg","jpg","gif")
+    );
+
+
+    private int port;
     private final String folder = "src/sharedFolder";
 
     public Webserver(int port){
@@ -43,7 +49,6 @@ public class Webserver {
         ResponseSender responseSender;
         Socket clientSocket;
         String command;
-        String body;
         byte[] buffer;
         DataOutputStream dataOutputStream;
         DataInputStream dataInputStream;
@@ -91,25 +96,17 @@ public class Webserver {
 
                     String[] splitter = postData.split("base64=");
                     String fileName = splitter[0].substring(4,splitter[0].length()-2);
-
                     String content = splitter[1].split(",")[1];
+                    if(supportedFiletypes.contains(getPrefix(fileName))) {
+                        String path = "src/sharedFolder/images/"+fileName;
+                        byte[] imageBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(content);
 
-                            System.out.println("FILENAME: "+fileName);
-                    System.out.println("CONTENT: "+content);
+                        Files.write(Paths.get(path),imageBytes);
 
-                   // byte[] data = Base64.decodeBase64(content);
-
-
-                    String path = "src/sharedFolder/images/"+fileName;
-                    File outputfile = new File(path);
-                    byte[] imageBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(content);
-
-                    Files.write(Paths.get(path),imageBytes);
-
-                    responseSender.send201();
-                    //System.out.println(body);
-
-
+                        responseSender.send201();
+                    } else {
+                     responseSender.send415();
+                    }
                 }
 
                 clientSocket.close();
@@ -135,15 +132,18 @@ public class Webserver {
             } while(bufferedReader.ready());
 
             response.append(charBuffer);
-
             String[] divideMessages = response.toString().split("\\s+");
-            command = divideMessages[0];
-            String requestedPath = divideMessages[1];
+            String requestedPath = "";
+            try {
+                command = divideMessages[0];
+                requestedPath = divideMessages[1];
+            } catch(ArrayIndexOutOfBoundsException e) {
+                //Chrome sends some sort of keepalive call periodicly which causes ugly ArrayIndexOutOfBounds in console.
+            }
             System.out.printf("Received a %s request\n", command);
             if(command.equals("POST")) {
                 String[] bodySeparation = response.toString().split("\r\n\r\n");
                 postData = bodySeparation[1];
-                System.out.println("BODY: " + postData);
             }
 
 
@@ -240,8 +240,13 @@ public class Webserver {
             return false;
         }
         private void getBody(String body) {
-            this.body = body;
             //To be further implemented.
+        }
+
+        private String getPrefix(String fileName) {
+            String[] split = fileName.split("\\.");
+            String prefix = split[split.length-1];
+            return prefix;
         }
 
         public boolean pathIsSecret(String requestedPath) {

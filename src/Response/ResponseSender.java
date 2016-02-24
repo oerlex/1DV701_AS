@@ -1,7 +1,9 @@
-import javax.swing.text.html.HTML;
+package Response;
+
+import Response.*;
+
 import java.io.DataOutputStream;
 import java.io.File;
-import java.util.Objects;
 
 /**
  * Created by Ludde on 2016-02-18.
@@ -51,13 +53,11 @@ public class ResponseSender {
     }
 
     public void send201() {
-        //implement
-        Created201 created201 = new Created201();
+        Created201Response created201 = new Created201Response();
         created201.sendResponse(dataOutputStream, HTMLContent);
         File file = new File("src/responsecodes/Created201.html");
         created201.sendFile(file,dataOutputStream);
     }
-
 
     public void send403(){
         Forbidden403Response forbidden403Response = new Forbidden403Response();
@@ -73,20 +73,18 @@ public class ResponseSender {
         fileNotFound.sendFile(file, dataOutputStream);
     }
 
+    public void send415() {
+        File file = new File("src/responsecodes/UnsupportedMediaType415.html");
+        UnsupportedMediaType415Response unsupportedMediaType415Response = new UnsupportedMediaType415Response();
+        unsupportedMediaType415Response.sendResponse(dataOutputStream,HTMLContent);
+        unsupportedMediaType415Response.sendFile(file,dataOutputStream);
+    }
+
     public void send500() {
         InternalServerError500Response internalServerError500Response = new InternalServerError500Response();
         internalServerError500Response.sendResponse(dataOutputStream,HTMLContent);
         File file = new File("src/responsecodes/InternalServerError500.html");
         internalServerError500Response.sendFile(file,dataOutputStream);
     }
-
-    public void throw201() {
-        Created201Response created201Response = new Created201Response();
-        created201Response.sendResponse(dataOutputStream,HTMLContent);
-        File file = new File("src/responsecodes/Created201.html");
-        created201Response.sendFile(file,dataOutputStream);
-    }
-
-
 
 }
