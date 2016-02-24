@@ -75,6 +75,13 @@ public class ResponseSender {
         internalServerError500Response.sendFile(file,dataOutputStream);
     }
 
+    public void throw201() {
+        Created201Response created201Response = new Created201Response();
+        created201Response.sendResponse(dataOutputStream,HTMLContent);
+        File file = new File("src/responsecodes/Created201.html");
+        created201Response.sendFile(file,dataOutputStream);
+    }
+
 
 
 }

@@ -120,11 +120,6 @@ public class Webserver {
             response.append(charBuffer);
             message = response.toString();
             System.out.println(message);
-            /*
-            while(!(message = bufferedReader.readLine()).equals("")) {
-                response.append(message);
-                System.out.println(message);
-            }*/
 
             String[] divideMessages = response.toString().split("\\s+");
             command = divideMessages[0];

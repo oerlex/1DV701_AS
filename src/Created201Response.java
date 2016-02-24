@@ -2,16 +2,15 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
- * Created by Ludde on 2016-02-18.
+ * Created by Ludde on 2016-02-23.
  */
-public class Forbidden403Response extends Response {
+public class Created201Response extends Response {
 
 
     @Override
     public String sendResponse(DataOutputStream dataOutputStream, String contentType) {
-        response += "\"HTTP/1.1 403 Forbidden \r\n\"";
+        response += "\"HTTP/1.1 201 Created \r\n\"";
         response += contentType+"\r\n";
-        response += "Connection: close\r\n";
         response += "\r\n";
 
         try {
@@ -23,3 +22,4 @@ public class Forbidden403Response extends Response {
         return  response;
     }
 }
+
