@@ -6,36 +6,85 @@
 </head>
 <body>
 
-
-
 <form method="post" enctype="text/plain" accept="image/gif,image/jpeg">
     Your image: <input type="file" name="pic" id="pic" onchange="loadImageFileAsURL()"><br>
-    <input type="hidden" id="base64" name="base64">
+       <input type="hidden" id="base64" name="base64">
     <input type="submit" value="Submit">
 </form>
-
 </body>
 
 <script type="text/javascript">
-    function loadImageFileAsURL()
-    {
-        var filesSelected = document.getElementById("pic").files;
-        var base64 = document.getElementById("base64");
-        if (filesSelected.length > 0)
-        {
-            var fileToLoad = filesSelected[0];
+     function loadImageFileAsURL()
+     {
+         var filesSelected = document.getElementById("pic").files;
+         var base64 = document.getElementById("base64");
+         if (filesSelected.length > 0)
+         {
+             var fileToLoad = filesSelected[0];
 
-            var fileReader = new FileReader();
+             var fileReader = new FileReader();
 
-            fileReader.onload = function(fileLoadedEvent)
-            {
-                base64.value = fileLoadedEvent.target.result;
-            };
-
-            fileReader.readAsDataURL(fileToLoad);
-        }
+             fileReader.onload = function(fileLoadedEvent)
+             {
+                 base64.value = fileLoadedEvent.target.result;
+                             console.log("Converted Base64 version is "+fileLoadedEvent.target.result);
+             };
+            console.log("Converted Base64 version is "+document.getElementById("base64").value);
+             fileReader.readAsDataURL(fileToLoad);
+         }
     }
+ </script>
 
+<script type='text/javascript'>
 
+function encodeImageFileAsURL(){
+    var filesSelected = document.getElementById("inputFileToLoad").files;
+    if (filesSelected.length > 0)
+    {
+        var fileToLoad = filesSelected[0];
+
+        var fileReader = new FileReader();
+
+        fileReader.onload = function(fileLoadedEvent) {
+            var srcData = fileLoadedEvent.target.result; // <--- data: base64
+
+            var newImage = document.createElement('img');
+            newImage.src = srcData;
+
+            document.getElementById("imgTest").innerHTML = newImage.outerHTML;
+            alert("Converted Base64 version is "+document.getElementById("imgTest").innerHTML);
+            console.log("Converted Base64 version is "+document.getElementById("imgTest").innerHTML);
+        }
+        fileReader.readAsDataURL(fileToLoad);
+    }
+}
 </script>
+
+<!--
+
+
+
+ alert("Converted Base64 version is "+document.getElementById("base64").innerHTML);
+<script type="text/javascript">
+    function el(id){return document.getElementById(id);} // Get elem by ID
+
+function readImage() {
+if ( this.files && this.files[0] ) {
+var FR= new FileReader();
+FR.onload = function(e) {
+el("img").src = e.target.result;
+el("base").innerHTML = e.target.result;
+};
+FR.readAsDataURL( this.files[0] );
+}
+}
+
+el("pic").addEventListener("change", readImage, false);
+</script>
+
+-->
+
+
+
+</body>
 </html>

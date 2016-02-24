@@ -1,5 +1,7 @@
 import org.apache.commons.codec.binary.Base64;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -60,7 +62,7 @@ public class Webserver {
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
                 responseSender = new ResponseSender(dataOutputStream);
                 buffer = new byte[1024];
-                String requestedPath = parseRequest2();
+                String requestedPath = parseRequest();
 
                 String contentType = "";
                 File file = new File("");
@@ -92,18 +94,20 @@ public class Webserver {
 
                     String content = splitter[1].split(",")[1];
 
-                    System.out.println("FILENAME: "+fileName);
+                            System.out.println("FILENAME: "+fileName);
                     System.out.println("CONTENT: "+content);
 
-                    byte[] data = Base64.decodeBase64(content);
+                   // byte[] data = Base64.decodeBase64(content);
+
 
                     String path = "src/sharedFolder/images/"+fileName;
+                    File outputfile = new File(path);
+                    byte[] imageBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(content);
 
-                    Files.write(Paths.get(path),data);
-
+                    Files.write(Paths.get(path),imageBytes);
 
                     responseSender.send201();
-                    System.out.println(body);
+                    //System.out.println(body);
 
 
                 }
@@ -123,22 +127,26 @@ public class Webserver {
         public String parseRequest() throws IOException {
 
             StringBuffer response = new StringBuffer();
-            String message = "";
+
             char[] charBuffer = new char[65500];
             int n = 0;
             do{
-                n = bufferedReader.read(charBuffer, n,1024);
+                n = bufferedReader.read(charBuffer, n,charBuffer.length);
             } while(bufferedReader.ready());
 
-
             response.append(charBuffer);
-            message = response.toString();
-            System.out.println(message);
 
             String[] divideMessages = response.toString().split("\\s+");
             command = divideMessages[0];
             String requestedPath = divideMessages[1];
             System.out.printf("Received a %s request\n", command);
+            if(command.equals("POST")) {
+                String[] bodySeparation = response.toString().split("\r\n\r\n");
+                postData = bodySeparation[1];
+                System.out.println("BODY: " + postData);
+            }
+
+
             return requestedPath;
         }
 
