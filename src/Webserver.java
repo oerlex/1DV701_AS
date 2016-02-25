@@ -124,19 +124,24 @@ public class Webserver {
 
             StringBuffer response = new StringBuffer();
 
-            char[] charBuffer = new char[65500];
+            char[] charBuffer = new char[100];
             int n = 0;
             do{
-                n = bufferedReader.read(charBuffer, n,charBuffer.length);
+                n = bufferedReader.read(charBuffer, 0,charBuffer.length);
+                response.append(charBuffer);
+
             } while(bufferedReader.ready());
 
-            response.append(charBuffer);
+           // response.append(charBuffer);
             String[] divideMessages = response.toString().split("\\s+");
             String requestedPath = "";
             try {
                 command = divideMessages[0];
                 System.out.printf("Received a %s request\n", command);
                 requestedPath = divideMessages[1];
+                if(requestedPath.endsWith("/")) {
+                    requestedPath = requestedPath.substring(0,requestedPath.length()-1);
+                }
             } catch(ArrayIndexOutOfBoundsException e) {
                 //Chrome sends some sort of keepalive call periodicly which causes ugly ArrayIndexOutOfBounds in console.
             }
