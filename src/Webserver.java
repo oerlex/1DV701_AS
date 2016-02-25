@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.StringTokenizer;
 
 /**
  * Created by oerlex on 2016-02-15.
@@ -50,7 +49,7 @@ public class Webserver {
         String command;
         byte[] buffer;
         DataOutputStream dataOutputStream;
-        DataInputStream dataInputStream;
+
         BufferedReader bufferedReader;
         String postData="";
         public Connection(Socket socket){
@@ -62,15 +61,15 @@ public class Webserver {
             // set up the read and write end of the communication socket
             try {
                 bufferedReader = new BufferedReader (new InputStreamReader(clientSocket.getInputStream()));
-                dataInputStream = new DataInputStream(clientSocket.getInputStream());
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
+
                 responseSender = new ResponseSender(dataOutputStream);
-                buffer = new byte[1024];
+
                 String requestedPath = parseRequest();
 
-                String contentType = "";
-                File file = new File("");
 
+
+                File file = new File("");
                 if(command.equals("GET")) {
                     //If the requested file or directory doesn't exists we send a 404Html page back
                     if(!pathExists(folder + requestedPath)) {
@@ -78,9 +77,12 @@ public class Webserver {
                         clientSocket.close();
                         //If the requested file is existent but in a nonpublic folder we send back a 403 HTML page
                     } else if(pathIsSecret(requestedPath)) {               //Secret
-                       responseSender.send403();
+                        responseSender.send403();
                         clientSocket.close();
                         //If it's existend and not restricted we check if a directory or a file has been requested.
+                    } else if(pathRequiresPayment(requestedPath)) {
+                        responseSender.send402();
+                        clientSocket.close();
                     } else {
                         //If its and directory we check for the corresponding index.html file and add it to the requested path
                         if(isDirectoryAndHasIndex(folder + requestedPath)) {
@@ -93,17 +95,32 @@ public class Webserver {
                     }
                 } else if(command.equals("POST")) {
 
-                    String[] splitter = postData.split("base64=");
-                    String fileName = splitter[0].substring(4,splitter[0].length()-2);
-                    String content = splitter[1].split(",")[1];
+                    /*
+                    Split the BODY of the post request, into a filename and a Byte64 String which is the picture data.
+                     */
+                    String[] splitter = new String[1];
+                    String fileName="";
+                    String content="";
+
+                    try {
+                        splitter = postData.split("base64=");
+                        fileName = splitter[0].substring(4, splitter[0].length() - 2);
+                        content = splitter[1].split(",")[1];
+                    } catch(ArrayIndexOutOfBoundsException e) {
+                        responseSender.send400();
+                    }
+
+                    //If the type of file is supported
                     if(supportedFiletypes.contains(getPrefix(fileName))) {
                         String path = "src/sharedFolder/images/"+fileName;
+                        //Get the byte64 as bytes
                         byte[] imageBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(content);
-
+                        //Write them to an image.
                         Files.write(Paths.get(path),imageBytes);
 
                         responseSender.send201();
                     } else {
+                        //Else we throw MediaType not supported.
                      responseSender.send415();
                     }
                 }
@@ -122,24 +139,25 @@ public class Webserver {
 
         public String parseRequest() throws IOException {
 
-            StringBuffer response = new StringBuffer();
+            //this method derives information from the request so that we can handle it properly.
 
-            char[] charBuffer = new char[100];
+            StringBuffer response = new StringBuffer();
+            char[] charBuffer = new char[8192];              //Works as a buffer.
             int n = 0;
             do{
-                n = bufferedReader.read(charBuffer, 0,charBuffer.length);
+                n = bufferedReader.read(charBuffer, 0,charBuffer.length);       //Load as many chars as the buffer can hold and append it to a string.
                 response.append(charBuffer);
 
-            } while(bufferedReader.ready());
+            } while(bufferedReader.ready());                        //For as long as we receive data.
 
-           // response.append(charBuffer);
+            //Divide at spaces to get headers separately
             String[] divideMessages = response.toString().split("\\s+");
             String requestedPath = "";
             try {
                 command = divideMessages[0];
-                System.out.printf("Received a %s request\n", command);
-                requestedPath = divideMessages[1];
-                if(requestedPath.endsWith("/")) {
+                System.out.printf("Received a %s request\n", command);              //Request type will be the first header, eg "GET" or "POST"
+                requestedPath = divideMessages[1];                                  //Path is second header.
+                if(requestedPath.endsWith("/")) {                                       //Discount ending slash "/"
                     requestedPath = requestedPath.substring(0,requestedPath.length()-1);
                 }
             } catch(ArrayIndexOutOfBoundsException e) {
@@ -147,14 +165,13 @@ public class Webserver {
             }
 
             if(command.equals("POST")) {
-                String[] bodySeparation = response.toString().split("\r\n\r\n");
+                String[] bodySeparation = response.toString().split("\r\n\r\n");        //Retrieve Body of POST by splitting at double carriage return and newline
                 postData = bodySeparation[1];
             }
-
-
             return requestedPath;
         }
 
+        //If path requested is a directory, look for index.html inside it and serve that if it exists.
         public boolean isDirectoryAndHasIndex(String path) {
             File tryFile = new File(path);
                 if(tryFile.isDirectory()) {
@@ -166,6 +183,7 @@ public class Webserver {
             return false;
         }
 
+        //Check if path exists.
         public boolean pathExists(String path) {
             File tryFile = new File(path);
             if(tryFile.exists()) {
@@ -173,18 +191,22 @@ public class Webserver {
             }
             return false;
         }
-        private void getBody(String body) {
-            //To be further implemented.
-        }
 
+        //Get ending prefix of a file like .png or .html
         private String getPrefix(String fileName) {
             String[] split = fileName.split("\\.");
             String prefix = split[split.length-1];
             return prefix;
         }
 
+        //Methods to check if secret etc.. to make use of additional HTTP responses
         public boolean pathIsSecret(String requestedPath) {
             if(requestedPath.contains("secret"))
+                return true;
+            return false;
+        }
+        public boolean pathRequiresPayment(String requestedPath) {
+            if(requestedPath.contains("premium"))
                 return true;
             return false;
         }

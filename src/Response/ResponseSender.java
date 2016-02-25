@@ -11,9 +11,11 @@ import java.io.File;
 public class ResponseSender {
 
     private DataOutputStream dataOutputStream;
+    //Content types we can send back
     private final String HTMLContent = "Content-Type: text/html";
     private final String PNGContent = "Content-Type: image/png";
     private final String JPGContent = "Content-Type: image/jpg";
+
 
     public ResponseSender(DataOutputStream dataOutputStream) {
         this.dataOutputStream = dataOutputStream;
@@ -34,11 +36,14 @@ public class ResponseSender {
         return contentType;
     }
 
+
     private String getPrefix(String requestedPath) {
         String[] split = requestedPath.split("\\.");
         String prefix = split[split.length-1];
         return prefix;
     }
+
+    //Methods for sending back the different responses
 
     public void send200(File file){
         //This will send the file requested if it is of a contentype that we support. New contenttypes for example ".jpeg" can easily be added to this class.
@@ -57,6 +62,20 @@ public class ResponseSender {
         created201.sendResponse(dataOutputStream, HTMLContent);
         File file = new File("src/responsecodes/Created201.html");
         created201.sendFile(file,dataOutputStream);
+    }
+
+    public void send400() {
+        File file = new File("src/responsecodes/BadRequest400.html");
+        PaymentRequired402 paymentRequired402 = new PaymentRequired402();
+        paymentRequired402.sendResponse(dataOutputStream,HTMLContent);
+        paymentRequired402.sendFile(file,dataOutputStream);
+    }
+
+    public void send402() {
+        File file = new File("src/responsecodes/PaymentRequired402.html");
+        PaymentRequired402 paymentRequired402 = new PaymentRequired402();
+        paymentRequired402.sendResponse(dataOutputStream,HTMLContent);
+        paymentRequired402.sendFile(file,dataOutputStream);
     }
 
     public void send403(){

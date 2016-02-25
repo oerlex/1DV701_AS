@@ -16,6 +16,8 @@ public abstract class Response {
 
     public abstract String sendResponse(DataOutputStream dataOutputStream, String contentType);
 
+    // Abstract class for all responses.
+
     protected void sendFile (File file, DataOutputStream out) {
         try {
             FileInputStream fileIN = new FileInputStream(file);
