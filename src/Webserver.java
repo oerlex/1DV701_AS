@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.StringTokenizer;
 
 /**
@@ -136,11 +135,12 @@ public class Webserver {
             String requestedPath = "";
             try {
                 command = divideMessages[0];
+                System.out.printf("Received a %s request\n", command);
                 requestedPath = divideMessages[1];
             } catch(ArrayIndexOutOfBoundsException e) {
                 //Chrome sends some sort of keepalive call periodicly which causes ugly ArrayIndexOutOfBounds in console.
             }
-            System.out.printf("Received a %s request\n", command);
+
             if(command.equals("POST")) {
                 String[] bodySeparation = response.toString().split("\r\n\r\n");
                 postData = bodySeparation[1];
@@ -150,77 +150,6 @@ public class Webserver {
             return requestedPath;
         }
 
-        public String parseRequest2() throws IOException {
-            int contentLength = 0;
-
-            String ding = "";
-            StringBuffer response = new StringBuffer();
-            String message = "";
-            int n = 0;
-
-            while(bufferedReader.ready()){
-                message = bufferedReader.readLine();
-                response.append(message+ "\r\n");
-                System.out.println(message);
-
-                if(message.contains("Content-Length")) {
-                    ding = message.split(" ")[1];
-                    contentLength = Integer.parseInt(ding);
-                }
-
-                if(message.equals(""))
-                    break;
-            }
-            StringTokenizer st = new StringTokenizer(response.toString());
-            command = st.nextToken();
-
-            String requestedPath = st.nextToken();
-
-            response = new StringBuffer();
-
-            int read ;
-
-            if(contentLength > 0) {
-                while ((read = bufferedReader.read()) != -1) {
-                    char c = (char)read;
-                    System.out.print(c);
-                    response.append(c);
-                    if (response.length() == contentLength)
-                        break;
-                }
-            }
-
-            postData = response.toString();
-
-            System.out.println("PATH: "+ requestedPath);
-            System.out.println("COMMAND: "+ command);
-            return requestedPath;
-        }
-
-       /* public String parseRequest() throws IOException{
-            String message = bufferedReader.readLine();
-            System.out.println("Reading...");
-
-            String[] messageArray = message.split("\\s");
-
-            StringBuilder sb = new StringBuilder();
-
-            while(bufferedReader.ready()){
-                sb.append(message);
-                message = bufferedReader.readLine();
-                if(message.contains("firstname")) {
-                    getBody(message);
-                }
-                System.out.println(message);
-            }
-
-            command = messageArray[0];
-
-            String requestedPath = messageArray[1];
-            requestedPath = requestedPath.substring(1);
-            return requestedPath;
-        }
-*/
         public boolean isDirectoryAndHasIndex(String path) {
             File tryFile = new File(path);
                 if(tryFile.isDirectory()) {
