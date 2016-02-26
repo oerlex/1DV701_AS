@@ -101,8 +101,6 @@ public class Webserver {
                 responseSender.send400();
             }
 
-            System.out.println("FILE: " + fileName);
-            System.out.println("DATA: " + content);
 
             //If the type of file is supported
             if(supportedFiletypes.contains(getPrefix(fileName))) {
@@ -145,8 +143,6 @@ public class Webserver {
                 responseSender.send400();
             }
 
-            System.out.println("FILE: " + fileName);
-            System.out.println("DATA: " + content);
             //If the type of file is supported
             if(supportedFiletypes.contains(getPrefix(fileName))) {
                 String path  = "src/sharedFolder/images/" + fileName;
@@ -216,7 +212,7 @@ public class Webserver {
             } while(bufferedReader.ready());                                            //For as long as we receive data.
 
                                                                                         //Divide at spaces to get headers separately
-            System.out.println(response.toString());
+
             String[] divideMessages = response.toString().split("\\s+");
             String requestedPath = "";
             try {
