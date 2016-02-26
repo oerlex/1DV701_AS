@@ -5,16 +5,15 @@
     <title></title>
 </head>
 <body>
-<h1> Post request</h1>
-<form method="post" enctype="text/plain">
+<h1> Put requests below</h1>
+<form action="/src/sharedFolder/images/" method="post" enctype="text/plain">
+    <input type="hidden" name="_method" value="put" />
     Your image: <input type="file" name="pic" id="pic" onchange="loadImageFileAsURL()"><br>
-       <input type="hidden" id="base64" name="base64">
+    <input type="hidden" id="base64" name="base64">
     <input type="submit" value="Submit">
 </form>
-
-<br><br>
-
 </body>
+
 <script type="text/javascript">
     function loadImageFileAsURL()
     {
@@ -36,6 +35,5 @@
         }
     }
 </script>
-
 
 </html>

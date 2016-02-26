@@ -93,7 +93,7 @@ public class Webserver {
                         //If the content type is filled with either png or html/htm we send the requested file back otherwise we send a 404 page
                         responseSender.send200(file);
                     }
-                } else if(command.equals("POST")) {
+                } else if(command.equals("POST") || command.equals("PUT")) {
 
                     /*
                     Split the BODY of the post request, into a filename and a Byte64 String which is the picture data.
@@ -103,6 +103,9 @@ public class Webserver {
                     String content="";
 
                     try {
+                        if(postData.startsWith("_method=put")) {
+                            postData = postData.substring(13);
+                        }
                         splitter = postData.split("base64=");
                         fileName = splitter[0].substring(4, splitter[0].length() - 2);
                         content = splitter[1].split(",")[1];
@@ -110,15 +113,28 @@ public class Webserver {
                         responseSender.send400();
                     }
 
+                    System.out.println("FILE: " + fileName);
+                    System.out.println("DATA: " + content);
                     //If the type of file is supported
                     if(supportedFiletypes.contains(getPrefix(fileName))) {
-                        String path = "src/sharedFolder/images/"+fileName;
-                        //Get the byte64 as bytes
-                        byte[] imageBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(content);
-                        //Write them to an image.
-                        Files.write(Paths.get(path),imageBytes);
+                        String path = "";
+                        if(command.equals("POST")) {
+                            path = "src/sharedFolder/images/" + fileName;
+                        } else {
+                            requestedPath = requestedPath.substring(1);
+                            path = requestedPath + fileName;
+                        }
 
-                        responseSender.send201();
+                        if(command.equals("POST") && pathExists(path)) {
+                            //Send some HTL page saying file exists here?
+                            System.out.println("File" + fileName + " already exists in that directory.");
+                        } else {
+                            //Get the byte64 as bytes
+                            byte[] imageBytes = javax.xml.bind.DatatypeConverter.parseBase64Binary(content);
+                            //Write them to an image.
+                            Files.write(Paths.get(path), imageBytes);
+                            responseSender.send201();
+                        }
                     } else {
                         //Else we throw MediaType not supported.
                      responseSender.send415();
@@ -151,11 +167,12 @@ public class Webserver {
             } while(bufferedReader.ready());                        //For as long as we receive data.
 
             //Divide at spaces to get headers separately
+            System.out.println(response.toString());
             String[] divideMessages = response.toString().split("\\s+");
             String requestedPath = "";
             try {
-                command = divideMessages[0];
-                System.out.printf("Received a %s request\n", command);              //Request type will be the first header, eg "GET" or "POST"
+                command = divideMessages[0];                 //Request type will be the first header, eg "GET" or "POST"
+
                 requestedPath = divideMessages[1];                                  //Path is second header.
                 if(requestedPath.endsWith("/")) {                                       //Discount ending slash "/"
                     requestedPath = requestedPath.substring(0,requestedPath.length()-1);
@@ -166,8 +183,13 @@ public class Webserver {
 
             if(command.equals("POST")) {
                 String[] bodySeparation = response.toString().split("\r\n\r\n");        //Retrieve Body of POST by splitting at double carriage return and newline
+
                 postData = bodySeparation[1];
+                if(postData.contains("_method=put")) {
+                    command = "PUT";
+                }
             }
+            System.out.printf("Received a %s request\n", command);
             return requestedPath;
         }
 
