@@ -1,7 +1,5 @@
 package Response;
 
-import Response.*;
-
 import java.io.DataOutputStream;
 import java.io.File;
 
@@ -21,6 +19,8 @@ public class ResponseSender {
         this.dataOutputStream = dataOutputStream;
     }
 
+
+    //This methods retrieves the filetype from the requested file and sets the contenttype to what the user wants
     private String setContentType(File file){
         String contentType = "";
         if(file.isFile()) {
@@ -39,8 +39,7 @@ public class ResponseSender {
 
     private String getPrefix(String requestedPath) {
         String[] split = requestedPath.split("\\.");
-        String prefix = split[split.length-1];
-        return prefix;
+        return split[split.length-1];
     }
 
     //Methods for sending back the different responses
@@ -61,6 +60,13 @@ public class ResponseSender {
         Created201Response created201 = new Created201Response();
         created201.sendResponse(dataOutputStream, HTMLContent);
         File file = new File("src/responsecodes/Created201.html");
+        created201.sendFile(file,dataOutputStream);
+    }
+
+    public void send201PUT(){
+        Created201Response created201 = new Created201Response();
+        created201.sendResponse(dataOutputStream, HTMLContent);
+        File file = new File("src/responsecodes/CreatedWithPUT.html");
         created201.sendFile(file,dataOutputStream);
     }
 
@@ -90,6 +96,13 @@ public class ResponseSender {
         FileNotFound404Response fileNotFound = new FileNotFound404Response();
         fileNotFound.sendResponse(dataOutputStream, HTMLContent);
         fileNotFound.sendFile(file, dataOutputStream);
+    }
+
+    public void send409() {
+        File file = new File("src/responsecodes/Conflict409.html");
+        Conflict409Response conflict = new Conflict409Response();
+        conflict.sendResponse(dataOutputStream, HTMLContent);
+        conflict.sendFile(file, dataOutputStream);
     }
 
     public void send415() {

@@ -1,7 +1,5 @@
 package Response;
 
-import Response.Response;
-
 import java.io.DataOutputStream;
 import java.io.IOException;
 
