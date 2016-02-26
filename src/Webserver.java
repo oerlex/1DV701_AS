@@ -64,10 +64,7 @@ public class Webserver {
                 dataOutputStream = new DataOutputStream (clientSocket.getOutputStream());
 
                 responseSender = new ResponseSender(dataOutputStream);
-
                 String requestedPath = parseRequest();
-
-
 
                 File file = new File("");
                 if(command.equals("GET")) {
